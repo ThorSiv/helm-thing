@@ -1,0 +1,45 @@
+    server:
+      log_level: info
+      http_listen_port: 3101
+    
+    client:
+      url: http://loki.logging:3100/loki/api/v1/push
+      
+    
+    positions:
+      filename: /tmp/positions.yaml
+    
+    scrape_configs:
+    - job_name: zms
+      static_configs:
+      - targets:
+          - localhost
+        labels:
+          from: zms
+          zms_log_type: zms_rtc_stats
+          zms_server: ${POD_NAME}
+          zms_hostname: ${HOSTNAME}
+          __path__: /opt/zealcomm/zms/stats/*.log
+      - targets:
+          - localhost
+        labels:
+          from: zms
+          zms_log_type: zms_worker_log
+          zms_server: ${POD_NAME}
+          zms_hostname: ${HOSTNAME}
+          __path__: /opt/zealcomm/zms/logs/*.log
+      - targets:
+          - localhost
+        labels:
+          from: zms
+          zms_log_type: zms_agent_stdout
+          zms_server: ${POD_NAME}
+          zms_hostname: ${HOSTNAME}
+          __path__: /opt/zealcomm/zms/logs/*.stdout
+      pipeline_stages:
+      - match:
+          selector: '{from="zms"}'
+          stages:
+            - multiline:
+                firstline: '^\[\d{4}-\d{2}-\d{2}'
+                max_wait_time: 3s
